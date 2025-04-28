@@ -1,6 +1,8 @@
 package lotto.view
+
 import lotto.Rank
 import lotto.Lotto
+import java.util.Locale
 
 object OutputView {
 
@@ -14,26 +16,34 @@ object OutputView {
     fun printStatistics(result: Map<Rank, Int>, purchaseAmount: Int) {
         println("\nWinning Statistics")
         println("---")
-        Rank.values()
-            .filter { it != Rank.MISS }
-            .sortedByDescending { it.reward }
-            .forEach { rank ->
-                val count = result[rank] ?: 0
-                println("${formatRank(rank)} – ${count} tickets")
-            }
+
+        val ranksInOrder = listOf(
+            Rank.FIFTH,   // 3 matches
+            Rank.FOURTH,  // 4 matches
+            Rank.THIRD,   // 5 matches
+            Rank.SECOND,  // 5 matches + bonus
+            Rank.FIRST    // 6 matches
+        )
+
+        ranksInOrder.forEach { rank ->
+            println(buildRankReport(rank, result[rank] ?: 0))
+        }
+
         printProfitRate(result, purchaseAmount)
     }
 
-    private fun formatRank(rank: Rank): String {
-        return when (rank) {
-            Rank.FIRST -> "6 Matches (2,000,000,000 KRW)"
-            Rank.SECOND -> "5 Matches + Bonus Ball (30,000,000 KRW)"
-            Rank.THIRD -> "5 Matches (1,500,000 KRW)"
-            Rank.FOURTH -> "4 Matches (50,000 KRW)"
-            Rank.FIFTH -> "3 Matches (5,000 KRW)"
-            else -> ""
+    private fun buildRankReport(rank: Rank, count: Int): String {
+        val matchInfo = if (rank.matchBonus) {
+            "${rank.matchCount} Matches + Bonus Ball"
+        } else {
+            "${rank.matchCount} Matches"
         }
+        val formattedPrize = formatOutput("%,d", rank.reward)
+        return "$matchInfo ($formattedPrize KRW) – $count tickets"
+    }
 
+    private fun formatOutput(format: String, args: Any, locale: Locale = Locale.US): String {
+        return String.format(locale, format, args)
     }
 
     private fun printProfitRate(result: Map<Rank, Int>, purchaseAmount: Int) {
@@ -41,7 +51,4 @@ object OutputView {
         val profitRate = totalReward.toDouble() / purchaseAmount * 100
         println("Total return rate is ${"%.1f".format(profitRate)}%.")
     }
-
-
-
 }
